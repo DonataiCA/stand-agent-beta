@@ -1,177 +1,210 @@
 # API Reference
 
-Base URL: `http://localhost:3000` (current) / `http://localhost:3001` (planned)
+Base URL: `http://localhost:3000`
 
-## Existing Endpoints
-
-### Health Check
+## Health Check
 ```
-GET /health
-→ { "status": "ok" }
+GET /health → { "status": "ok" }
 ```
 
-### Users (Authentication)
+## Authentication
 
+### JWT Token (Dashboard users)
 ```
-POST /users                    # Register
-POST /users/login              # Login (phone + password)
-POST /users/google             # Google OAuth
-POST /users/apple              # Apple OAuth
-POST /users/logout             # Logout (protected)
-POST /users/check-phone        # Check phone exists
-GET  /users                    # List users (protected, paginated)
-GET  /users/profile            # Current user profile (protected)
-GET  /users/:id                # User by ID (protected)
-PUT  /users/:id                # Update user (protected)
-DELETE /users/:id              # Delete user (protected)
+Authorization: Bearer <token>
 ```
+- Obtained from `/api/users/login` or `/api/users` (register)
+- Per-user secrets stored in database, expires in 1 day
 
-### Media
+### API Key (OpenClaw / services)
 ```
-POST /media/upload             # Upload file to S3 (protected, multipart)
+X-API-Key: <key>
 ```
+- Value matches `API_SECRET_KEY` env var
+- For machine-to-machine communication
 
-### Queue
-```
-POST /queue/jobs               # Create background job
-Body: { "text": "string (max 10000 chars)" }
-→ { "message": "Job added", "jobId": "..." }
-```
+### Dual Auth
+Some endpoints accept either JWT or API Key. The `authenticateAny` middleware tries API key first, falls back to JWT.
 
 ---
 
-## Planned Endpoints (from stand-agent-plan-v2)
-
-### Leads CRUD
+## Users `/api/users`
 
 ```
-POST   /api/leads
+POST   /api/users                  # Register (public)
+Body: { "firstName", "lastName", "email", "phoneNumber", "password" }
+→ 201 { "user": User, "token": "jwt..." }
+
+POST   /api/users/login            # Login (public)
+Body: { "phoneNumber", "password" }
+→ { "user": User, "token": "jwt..." }
+
+POST   /api/users/logout           # Logout (JWT)
+→ { "message": "Logged out successfully" }
+
+POST   /api/users/check-phone      # Check phone exists (public)
+Body: { "phoneNumber" }
+→ { "exists": boolean }
+
+GET    /api/users                  # List users (JWT, paginated)
+Query: ?page=1&limit=10&search=string
+→ { "data": User[], "pagination": {...} }
+
+GET    /api/users/profile          # Current user (JWT)
+→ User
+
+GET    /api/users/:id              # User by ID (JWT)
+PUT    /api/users/:id              # Update user (JWT)
+DELETE /api/users/:id              # Delete user (JWT) → 204
+```
+
+## Events `/api/events`
+
+All endpoints accept JWT or API Key (dual auth).
+
+```
+GET    /api/events                 # List events (paginated)
+Query: ?page=1&limit=10&search=string&isActive=true
+→ { "data": Event[], "pagination": {...} }
+
+GET    /api/events/:id             # Event detail
+→ { "data": Event }
+
+POST   /api/events                 # Create event
+Body: {
+    "name": "string (required)",
+    "date": "2026-04-15T00:00:00.000Z (ISO)",
+    "location": "string",
+    "description": "string"
+}
+→ 201 { "data": Event }
+
+PUT    /api/events/:id             # Update event
+Body: { "name?", "date?", "location?", "description?", "isActive?" }
+→ { "data": Event }
+
+DELETE /api/events/:id             # Delete event → 204
+
+GET    /api/events/:id/stats       # Event statistics
+→ {
+    "data": {
+        "event": { "id", "name", "date", "location" },
+        "totalLeads": number,
+        "byCompanyType": { "STARTUP": n, ... },
+        "bySource": { "AUDIO": n, "TEXT": n, "PHOTO": n },
+        "topBusinessAngles": [{ "angle": string, "count": number }],
+        "timeline": { "2026-04-15": n, ... }
+    }
+}
+```
+
+## Leads `/api/leads`
+
+```
+POST   /api/leads                  # Create lead (API Key)
 Body: {
     "name": "string (required)",
     "company": "string",
     "companyType": "STARTUP|CORPORATION|AGENCY|FREELANCER|INVESTOR|OTHER",
     "role": "string",
-    "email": "string (email format)",
+    "email": "string (email)",
     "phone": "string",
     "businessAngle": "string",
     "notes": "string",
     "source": "AUDIO|TEXT|PHOTO",
     "eventId": "uuid (required)"
 }
-→ 201 { "data": Lead, "embeddingGenerated": boolean }
+→ 201 { "data": Lead }
 
-GET    /api/leads?eventId=uuid&search=string&page=1&limit=10
+GET    /api/leads                  # List leads (dual auth, paginated)
+Query: ?page=1&limit=10&search=string&eventId=uuid&companyType=STARTUP&source=AUDIO
 → { "data": Lead[], "pagination": {...} }
 
-GET    /api/leads/:id
+GET    /api/leads/:id              # Lead detail (dual auth)
 → { "data": Lead }
 
-PATCH  /api/leads/:id/enrich
+PUT    /api/leads/:id              # Update lead (dual auth)
+Body: { "name?", "company?", "companyType?", ... }
+→ { "data": Lead }
+
+PATCH  /api/leads/:id/enrich       # Enrich lead (API Key)
 Body: {
-    "companyWebsite": "string",
+    "companyWebsite": "url",
     "companyDescription": "string",
     "companySize": "string",
     "companyFunding": "string",
-    "linkedinUrl": "string",
+    "linkedinUrl": "url",
     "verifiedRole": "string",
     "otherMentions": "string"
 }
 → { "data": Lead }
+
+DELETE /api/leads/:id              # Delete lead (dual auth) → 204
 ```
 
-### Events
-
-```
-GET    /api/events
-→ { "data": Event[] }
-
-POST   /api/events
-Body: {
-    "name": "string (required)",
-    "date": "ISO date",
-    "location": "string",
-    "description": "string"
-}
-→ 201 { "data": Event }
-
-GET    /api/events/:id/stats
-→ {
-    "totalLeads": number,
-    "byCompanyType": { "STARTUP": n, "CORPORATION": n, ... },
-    "topBusinessAngles": string[],
-    "topLeads": Lead[],
-    "timeline": { "date": "count" }[]
-}
-```
-
-### Embeddings
-
-```
-POST   /api/embeddings/generate
-Body: { "leadId": "uuid" }
-→ { "success": true, "dimensions": 768 }
-
-POST   /api/embeddings/query
-Body: {
-    "query": "string (required)",
-    "eventId": "uuid (optional)",
-    "limit": number (default 5)
-}
-→ { "results": [{ "lead": Lead, "similarity": number }] }
-```
-
-### RAG
-
-```
-POST   /api/rag/query
-Body: {
-    "question": "string (required)",
-    "eventId": "uuid (optional)"
-}
-→ {
-    "answer": "string (LLM response)",
-    "sources": Lead[],
-    "confidence": number
+### Lead Response Shape
+```json
+{
+    "id": "uuid",
+    "name": "María García",
+    "company": "Fintech Solutions",
+    "companyType": "STARTUP",
+    "role": "COO",
+    "email": "maria@fintech.com",
+    "phone": "+34...",
+    "businessAngle": "Integrar IA en pagos",
+    "notes": "Muy interesada",
+    "source": "AUDIO",
+    "enrichment": {
+        "companyWebsite": "https://fintech.com",
+        "companyDescription": "Plataforma de pagos B2B",
+        "companySize": "45 empleados",
+        "companyFunding": "Serie A",
+        "linkedinUrl": "https://linkedin.com/in/...",
+        "verifiedRole": "COO",
+        "otherMentions": null,
+        "enrichedAt": "2026-03-22T..."
+    },
+    "event": { "id": "uuid", "name": "Tech Event 2026" },
+    "createdAt": "...",
+    "updatedAt": "..."
 }
 ```
 
-## Authentication
+## Media `/api/media`
+```
+POST   /api/media/upload           # Upload file to S3 (JWT)
+```
 
-### JWT Token
+## Queue `/api/queue`
 ```
-Authorization: Bearer <token>
+POST   /api/queue/jobs             # Create background job
+Body: { "text": "string (max 10000)" }
+→ { "message": "Job added", "jobId": "..." }
 ```
-- Token obtained from login/register/OAuth endpoints
-- Per-user secrets stored in database
-- Expires in 1 day
-- Middleware: `authenticate` for protected routes
 
-### API Key (planned for OpenClaw)
+---
+
+## Planned Endpoints (not yet implemented)
+
+### Embeddings `/api/embeddings`
 ```
-X-API-Key: <key>
+POST   /api/embeddings/generate    # Generate embedding for a lead
+POST   /api/embeddings/query       # Vector similarity search
 ```
-- For machine-to-machine communication (OpenClaw → Backend)
-- Simpler than JWT for service calls
+
+### RAG `/api/rag`
+```
+POST   /api/rag/query              # Full RAG query (embed + search + LLM)
+```
+
+---
 
 ## Response Formats
 
-### Success (single item)
-```json
-{ "data": { ... } }
-```
-
-### Success (list)
-```json
-{
-    "data": [...],
-    "pagination": { "page": 1, "limit": 10, "total": 42, "pages": 5 }
-}
-```
-
-### Error
-```json
-{ "error": "Human-readable error message" }
-```
+### Success (single): `{ "data": {...} }`
+### Success (list): `{ "data": [...], "pagination": { "page", "limit", "total", "pages" } }`
+### Error: `{ "error": "message" }`
 
 ## Status Codes
 | Code | Usage |
@@ -179,8 +212,8 @@ X-API-Key: <key>
 | 200 | Success |
 | 201 | Created |
 | 204 | Deleted (no content) |
-| 400 | Validation error / bad request |
-| 401 | Unauthorized (no/invalid token) |
-| 403 | Forbidden (insufficient role) |
+| 400 | Validation / bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
 | 404 | Not found |
 | 500 | Server error |
