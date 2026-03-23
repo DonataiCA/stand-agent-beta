@@ -20,7 +20,7 @@ Telegram → n8n (audio transcription only) → OpenClaw (AI brain)
 - **n8n**: External instance (already deployed), handles ONLY audio→text transcription via OpenAI Whisper
 - **OpenClaw**: AI agent in Docker, connects to Telegram, uses Claude/GPT as LLM backend. Skills defined via SKILL.md files, calls backend via curl.
 - **Backend API**: Node.js + Express + TypeScript + Prisma — bridges OpenClaw ↔ database
-- **PostgreSQL + pgvector**: Data storage with vector similarity search (768-dim Gemini embeddings)
+- **PostgreSQL + pgvector**: Data storage with vector similarity search (3072-dim Gemini embeddings)
 - **Frontend**: React + Vite + TailwindCSS dashboard
 
 ## Tech Stack
@@ -33,7 +33,8 @@ Telegram → n8n (audio transcription only) → OpenClaw (AI brain)
 | Queue | Bull 4.x + Redis |
 | Auth | JWT (per-user secrets) + API Key (service-to-service) |
 | DB | PostgreSQL 16 + pgvector |
-| Embeddings | Gemini Embedding API (gemini-embedding-001, 768-dim) |
+| Embeddings | Gemini Embedding API (gemini-embedding-001, 3072-dim) |
+| RAG LLM | Anthropic Claude Sonnet 4.6 (@anthropic-ai/sdk) |
 | File Storage | AWS S3 (optional) |
 | Logging | Winston |
 
@@ -106,7 +107,7 @@ GEMINI_API_KEY=...             # For embedding generation
 
 ## Key Decisions
 - n8n is an **external instance** (already deployed), not local Docker
-- Embeddings use **Gemini API free tier** (768-dim), NOT local Ollama
+- Embeddings use **Gemini API free tier** (3072-dim), NOT local Ollama
 - OpenClaw communicates with backend via HTTP REST + API key
 - Audio: n8n → Telegram `[LEAD]` prefix → OpenClaw
 - No Google/Apple OAuth — email/password auth only
@@ -122,9 +123,9 @@ GEMINI_API_KEY=...             # For embedding generation
 - [x] Docker Compose (PostgreSQL+pgvector + Redis)
 - [x] Routes migrated to /api/ prefix
 - [x] Google/Apple OAuth removed
-- [ ] Embeddings generation (Gemini API integration)
-- [ ] Vector similarity search (pgvector queries)
-- [ ] RAG query endpoint
+- [x] Embeddings generation (Gemini API integration)
+- [x] Vector similarity search (pgvector queries)
+- [x] RAG query endpoint (Claude Sonnet 4.6 via Anthropic SDK)
 - [ ] OpenClaw setup + skills
 - [ ] n8n audio transcription workflow
 - [ ] React dashboard
