@@ -126,6 +126,6 @@ GEMINI_API_KEY=...             # For embedding generation
 - [x] Embeddings generation (Gemini API integration)
 - [x] Vector similarity search (pgvector queries)
 - [x] RAG query endpoint (Claude Sonnet 4.6 via Anthropic SDK)
-- [ ] OpenClaw setup + skills
+- [x] OpenClaw setup + skills (4 skills: procesar-lead, enriquecer-lead, consultar-leads, resumen-evento)
 - [ ] n8n audio transcription workflow
 - [ ] React dashboard

@@ -1,0 +1,96 @@
+{
+  "name": "voice-to-text",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-to-text",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-448, -16],
+      "webhookId": "voice-to-text-webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "parameterType": "formData",
+              "value": "whisper-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f1692a8c-a33a-4e56-ab4b-dfba9e4ebb63",
+      "name": "Transcribe Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-224, -16],
+      "credentials": {
+        "openAiApi": {
+          "id": "kiQKjXGhylXBdjuO",
+          "name": "DomotaiKey"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-transcription",
+              "name": "transcription",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1db22a86-33bc-463f-aaf8-6f8b8430655c",
+      "name": "Set - Response Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [0, -16]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Transcribe Audio", "type": "main", "index": 0 }]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [{ "node": "Set - Response Data", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "69a7c584-4c0a-4ae5-86a0-706a25ec4484",
+  "meta": {
+    "instanceId": "b13b2d4f45b56e5630e190dfe87a222fe35cc1d8f5a4f2e6595a4f9874c52cd5"
+  },
+  "id": "voice-to-text",
+  "tags": []
+}

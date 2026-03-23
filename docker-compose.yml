@@ -21,6 +21,26 @@ services:
       - redisdata:/data
     restart: unless-stopped
 
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: standagent-openclaw
+    restart: unless-stopped
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - BACKEND_URL=http://host.docker.internal:3000
+      - ACTIVE_EVENT_ID=${ACTIVE_EVENT_ID}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENCLAW_TZ=Europe/Madrid
+    volumes:
+      - ./openclaw/config:/home/node/.openclaw
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - postgres
+      - redis
+
 volumes:
   pgdata:
   redisdata:
