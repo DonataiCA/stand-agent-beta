@@ -33,7 +33,7 @@ export default function RagSearchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">RAG Search</h1>
+        <h1 className="text-2xl font-bold text-foreground">Agente de consultas</h1>
         <p className="text-muted-foreground text-sm">Pregunta sobre tus leads usando lenguaje natural</p>
       </div>
 

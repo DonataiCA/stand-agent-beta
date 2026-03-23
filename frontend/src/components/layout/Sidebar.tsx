@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 const navItems = [
   { to: '/', icon: Users, label: 'Leads' },
   { to: '/events', icon: Calendar, label: 'Eventos' },
-  { to: '/search', icon: Search, label: 'RAG Search' },
+  { to: '/search', icon: Search, label: 'Agente de consultas' },
 ];
 
 export default function Sidebar() {
