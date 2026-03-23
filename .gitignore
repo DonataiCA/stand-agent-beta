@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# OpenClaw runtime files
+openclaw/config/workspace/.git/
+openclaw/config/workspace/.openclaw/
+openclaw/config/workspace/memory/
+openclaw/config/agents/
+openclaw/config/canvas/
+openclaw/config/cron/
+openclaw/config/logs/
+openclaw/config/telegram/
+openclaw/config/update-check.json
+openclaw/config/openclaw.json.bak
