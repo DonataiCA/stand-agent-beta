@@ -4,7 +4,7 @@ dist/
 *.log
 .DS_Store
 
-# OpenClaw runtime files
+# OpenClaw runtime files (contain secrets and session data)
 openclaw/config/workspace/.git/
 openclaw/config/workspace/.openclaw/
 openclaw/config/workspace/memory/
@@ -15,3 +15,4 @@ openclaw/config/logs/
 openclaw/config/telegram/
 openclaw/config/update-check.json
 openclaw/config/openclaw.json.bak
+openclaw/config/media/
